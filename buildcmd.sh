@@ -1,0 +1,1 @@
+pyinstaller --icon="icon.ico" --name "ActivityReportGenerator" --add-data "活動報告.docx;template" --onefile activity_report_generator.py
