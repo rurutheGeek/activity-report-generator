@@ -35,7 +35,7 @@
 
 1. リポジトリをクローンまたはダウンロード：
    ```
-   git clone https://github.com/yourusername/activity-report-generator.git
+   git clone https://github.com/ruruthegeek/activity-report-generator.git
    cd activity-report-generator
    ```
 

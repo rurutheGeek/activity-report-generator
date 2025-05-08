@@ -11,6 +11,7 @@ import time
 import sys
 import shutil
 
+
 def is_running_as_executable():
     """
     PyInstallerで作成された実行ファイルとして実行されているかどうかをチェック
@@ -34,8 +35,76 @@ def get_resource_path(relative_path):
 def main():
     # 現在の日付を取得
     current_date = datetime.datetime.now()
-    year = current_date.year
-    month = current_date.month
+    current_year = current_date.year
+    current_month = current_date.month
+    
+    # 活動月の入力
+    print(f"活動報告更新プログラム\n")
+
+    #活動年の入力
+    while True:
+        year_input = input(f"活動年を入力（{current_year}年で続行する場合はEnter）: ").strip()
+        if not year_input:  # 入力が空の場合、現在の年を使用
+            year = current_year
+            break
+        try:
+            year = int(year_input)
+        except ValueError:
+            print("エラー: 有効な年を入力してください。")
+    
+    
+    while True:
+        month_input = input(f"活動月を入力（{current_month}月で続行する場合はEnter）: ").strip()
+        if not month_input:  # 入力が空の場合、現在の月を使用
+            month = current_month
+            break
+        try:
+            month = int(month_input)
+            if 1 <= month <= 12:
+                break
+            else:
+                print("エラー: 1から12の間で入力してください。")
+        except ValueError:
+            print("エラー: 有効な月を入力してください。")
+    
+    # 場所の選択（八王子または新宿）
+    while True:
+        location_choice = input("活動場所を入力してください（h: 八王子, s: 新宿）: ").lower()
+        if location_choice in ['h', 's']:
+            break
+        else:
+            print("エラー: 'h'（八王子）または's'（新宿）を入力してください。")
+            continue
+
+    location_text = "（新宿）" if location_choice == "s" else "（八王子）"
+
+    print(f"\n活動報告{location_text} - {year}年{month}月\n")
+    
+    # 活動日と場所の入力
+    print("活動日と場所を最大6回入力してください")
+    
+    dates = []
+    locations = []
+    
+    for i in range(6):
+        date = input(f"活動日 {i+1} (例: 15、終了するにはEnter): ")
+        if not date.strip():  # 日付が空白の場合、入力を終了
+            break
+            
+        try:
+            day = int(date)
+            if 1 <= day <= 31:
+                date = f"{month}/{day}"  # 月/日の形式に変換
+            else:
+                print("エラー: 1から31の間の日を入力してください。")
+                continue
+        except ValueError:
+            print("エラー: 有効な日を入力してください。")
+            continue
+            
+        location = input(f"活動場所 {i+1} (例: 02-264): ")
+        dates.append(date)
+        locations.append(location)
     
     # アクティビティのオプションと重みを設定
     activities = [
@@ -59,28 +128,6 @@ def main():
     # 重みの正規化
     total_weight = sum(weight for _, weight in activities)
     normalized_activities = [(act, weight/total_weight) for act, weight in activities]
-    
-    # 場所の選択（八王子または新宿）
-    print(f"活動報告更新プログラム - {year}年{month}月\n")
-    location_choice = input("h:八王子とs:新宿から選択してください (h/s): ").lower()
-    
-    location_text = "（新宿）" if location_choice == "s" else "（八王子）"
-    location_prefix = "(新宿)" if location_choice == "s" else "(八王子)"
-    
-    # 活動日と場所の入力
-    print("活動日と場所を最大6回入力してください")
-    
-    dates = []
-    locations = []
-    
-    for i in range(6):
-        date = input(f"活動日 {i+1} (例: 4/15、終了するには空白): ")
-        if not date.strip():  # 日付が空白の場合、入力を終了
-            break
-            
-        location = input(f"活動場所 {i+1} (例: 02-264): ")
-        dates.append(date)
-        locations.append(location)
     
     # ランダムデータの生成
     report_data = []
@@ -180,29 +227,21 @@ def main():
             # 最初の段落が年月情報を含む可能性が高い
             para = doc.paragraphs[0]
             
-            # デバッグ情報
-            print(f"段落テキスト: '{para.text}'")
-            print(f"段落内のrun数: {len(para.runs)}")
-            
             # 年月の構造が分析結果と一致するかチェック
             if len(para.runs) >= 5 and '年' in para.text and '月' in para.text:
                 
                 # 指定されたRunのみを更新:
-                # Run 2: '24' を更新 (年の下2桁)
                 if len(para.runs) >= 2:
                     year_str = str(year)
                     if len(year_str) >= 2:
                         para.runs[1].text = year_str[2:]  # 年の下2桁のみを更新
-                        print(f"Run 2を更新: '{para.runs[1].text}'")
                 
                 # Run 4: '4' を更新 (月)
                 if len(para.runs) >= 4:
                     para.runs[3].text = str(month)
-                    print(f"Run 4を更新: '{para.runs[3].text}'")
                 
                 # Run 1, 3, 5 はテンプレートなので更新しない
                 
-                print("年月情報を更新しました。")
                 updated = True
         
         # 場所の更新（八王子/新宿）
@@ -254,12 +293,12 @@ def main():
         
         # ドキュメントを更新された年月とファイル名で保存
         output_dir = "./"
-        new_filename = f"{output_dir}{year}年{month}月活動報告{location_prefix}.docx"
+        new_filename = f"{output_dir}{year}年{month}月活動報告{location_text}.docx"
         
         # 絶対パスに変換
         abs_new_filename = os.path.abspath(new_filename)
         doc.save(new_filename)
-        print(f"活動報告書が更新されました: {abs_new_filename}")
+        print(f"\n活動報告書が更新されました: {abs_new_filename}")
         
         # 絶対パスでファイルを開く試行
         try_open_file(abs_new_filename)
